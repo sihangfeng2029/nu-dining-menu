@@ -84,15 +84,31 @@ def _desc_is_useful(it: dict) -> bool:
     return bool(d) and d.lower() != it["name"].strip().lower()
 
 
-def scrape_and_store(dates: list[str]) -> None:
-    from fetch_menu import fetch_day  # imported lazily so --offline needs no network libs
+RAW_DIR = ROOT / "raw"
 
+
+def load_raw(d: str) -> dict:
+    """Load a raw (untranslated) menu dump uploaded to raw/YYYY-MM-DD.json.
+
+    The DineOnCampus API sits behind a Cloudflare bot check that blocks cloud
+    servers (GitHub Actions gets HTTP 403), so the raw data is collected in a real
+    browser on demand and committed to raw/. If no raw file exists we fall back to a
+    direct fetch, which only works from networks the API accepts.
+    """
+    f = RAW_DIR / f"{d}.json"
+    if f.exists():
+        return json.loads(f.read_text(encoding="utf-8"))
+    from fetch_menu import fetch_day  # imported lazily so --offline needs no network libs
+    return fetch_day(d)
+
+
+def scrape_and_store(dates: list[str]) -> None:
     tr = Translator()
     MENU_DIR.mkdir(parents=True, exist_ok=True)
     for d in dates:
-        print(f"[build] fetching {d}")
+        print(f"[build] loading {d}")
         try:
-            raw = fetch_day(d)
+            raw = load_raw(d)
         except Exception as exc:
             print(f"[build] fetch failed for {d}: {exc}")
             continue
@@ -165,8 +181,10 @@ def main(argv: list[str]) -> None:
     dates = [a for a in argv if not a.startswith("--")]
     if not offline:
         if not dates:
-            today = datetime.now(CHICAGO).date()
-            dates = [(today + timedelta(days=i)).isoformat() for i in range(DAYS_AHEAD + 1)]
+            # Re-process recent raw dumps (git checkouts reset mtimes, so go by date).
+            # Older days are already translated in data/menus and are left alone.
+            since = (datetime.now(CHICAGO).date() - timedelta(days=1)).isoformat()
+            dates = sorted(f.stem for f in RAW_DIR.glob("*.json") if f.stem >= since) if RAW_DIR.exists() else []
         scrape_and_store(dates)
         retranslate_existing(Translator())
     assemble_site()

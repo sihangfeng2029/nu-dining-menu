@@ -2,16 +2,13 @@
 # commit the data (history + translation cache), and publish to GitHub Pages.
 name: Update menu
 
+# Raw menus are collected on demand in a real browser and committed to raw/
+# (the API blocks cloud servers), so the job runs whenever raw/ changes.
 on:
-  schedule:
-    # GitHub cron is UTC. 10:17 UTC = 4:17/5:17 am Chicago (before breakfast);
-    # 15:47 UTC = ~10 am Chicago, a second pass in case the menu changed in the morning.
-    - cron: "17 10 * * *"
-    - cron: "47 15 * * *"
-  workflow_dispatch: {}   # "Run workflow" button for manual refresh
+  workflow_dispatch: {}
   push:
     branches: [main]
-    paths: ["web/**", "scraper/**", ".github/workflows/**"]
+    paths: ["raw/**", "web/**", "scraper/**", ".github/workflows/**"]
 
 permissions:
   contents: write   # commit data/ back to the repo
