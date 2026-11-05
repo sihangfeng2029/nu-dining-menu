@@ -75,7 +75,11 @@ def _get_json(path: str, params: dict[str, Any] | None = None, retries: int = 4)
             resp = SESSION.get(url, params=params, timeout=40)
             if resp.status_code == 200:
                 return resp.json()
-            last_err = RuntimeError(f"HTTP {resp.status_code} for {resp.url}")
+            # Include the start of the body and server header to make failures diagnosable.
+            last_err = RuntimeError(
+                f"HTTP {resp.status_code} for {resp.url} server={resp.headers.get('server')} "
+                f"body={resp.text[:300]!r}"
+            )
         except requests.RequestException as exc:  # network error, timeout, ...
             last_err = exc
         time.sleep(2 ** attempt)  # 1s, 2s, 4s, 8s
