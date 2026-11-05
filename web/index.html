@@ -259,8 +259,9 @@
       body = meal.stations.map(st => {
         const items = st.items.filter(itemMatches);
         if (!items.length) return "";
-        const zh = st.name.zh && st.name.zh !== st.name.en ? `<span>${esc(st.name.zh)}</span>` : "";
-        return `<section class="station"><h3>${esc(st.name.en)}${zh}</h3><div class="items">${items.map(renderItem).join("")}</div></section>`;
+        // Station names are internal labels ("Comfort 1", "Rooted 2"); machine
+        // translation of them is meaningless, so they are shown in English only.
+        return `<section class="station"><h3>${esc(st.name.en)}</h3><div class="items">${items.map(renderItem).join("")}</div></section>`;
       }).join("");
       if (!body) return state.q ? "" : `<div class="card name-en">该时段无菜单</div>`;
     }
