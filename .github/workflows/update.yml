@@ -1,0 +1,62 @@
+# Daily job: scrape the five Northwestern dining commons, translate to Chinese,
+# commit the data (history + translation cache), and publish to GitHub Pages.
+name: Update menu
+
+on:
+  schedule:
+    # GitHub cron is UTC. 10:17 UTC = 4:17/5:17 am Chicago (before breakfast);
+    # 15:47 UTC = ~10 am Chicago, a second pass in case the menu changed in the morning.
+    - cron: "17 10 * * *"
+    - cron: "47 15 * * *"
+  workflow_dispatch: {}   # "Run workflow" button for manual refresh
+  push:
+    branches: [main]
+    paths: ["web/**", "scraper/**", ".github/workflows/**"]
+
+permissions:
+  contents: write   # commit data/ back to the repo
+  pages: write      # deploy to GitHub Pages
+  id-token: write
+
+concurrency:
+  group: menu-update
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Scrape, translate, build site
+        run: python scraper/build.py
+
+      - name: Commit data and translation cache
+        run: |
+          git config user.name "menu-bot"
+          git config user.email "menu-bot@users.noreply.github.com"
+          git add data
+          git diff --cached --quiet || git commit -m "Menu update $(TZ=America/Chicago date +%F)"
+          git push || echo "push skipped"
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#4E2A84">
+<title>NU 食堂菜单 · 中英对照</title>
+<style>
+  /* ---------- Design tokens: Northwestern purple, light & dark ---------- */
+  :root {
+    --purple: #4E2A84; --purple-soft: #ede7f6;
+    --bg: #f6f5f8; --card: #ffffff; --text: #1d1b22; --muted: #6b6775; --line: #e6e3ec;
+    --veg-bg: #e6f4ea; --veg-fg: #1e6b34; --alg-bg: #fff3e0; --alg-fg: #8a4b00;
+    --radius: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --purple: #b39ddb; --purple-soft: #2c2440;
+      --bg: #121016; --card: #1c1a22; --text: #ece9f2; --muted: #a29dad; --line: #2e2b36;
+      --veg-bg: #173523; --veg-fg: #8fd6a3; --alg-bg: #3a2a12; --alg-fg: #f0bf7a;
+    }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.45 -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", Roboto, sans-serif; }
+  body { padding-bottom: env(safe-area-inset-bottom); }
+
+  /* ---------- Sticky header with all controls (thumb-reachable on phones) ---------- */
+  header { position: sticky; top: 0; z-index: 10; background: var(--bg);
+    padding: calc(10px + env(safe-area-inset-top)) 12px 8px; border-bottom: 1px solid var(--line); }
+  .wrap { max-width: 860px; margin: 0 auto; }
+  .titlebar { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  h1 { font-size: 18px; margin: 0; color: var(--purple); letter-spacing: .2px; }
+  .updated { font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .row { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 8px 0 0; }
+  .row::-webkit-scrollbar { display: none; }
+  .chip { flex: 0 0 auto; border: 1px solid var(--line); background: var(--card); color: var(--text);
+    border-radius: 999px; padding: 6px 12px; font-size: 14px; cursor: pointer; white-space: nowrap; }
+  .chip small { color: var(--muted); margin-left: 3px; font-size: 11px; }
+  .chip.on { background: var(--purple); border-color: var(--purple); color: #fff; }
+  .chip.on small { color: #e8def8; }
+  @media (prefers-color-scheme: dark) { .chip.on { color: #1c1a22; } .chip.on small { color: #3b2e55; } }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; flex: 0 0 auto; }
+  .seg button { border: 0; background: var(--card); color: var(--text); padding: 6px 14px; font-size: 14px; cursor: pointer; }
+  .seg button.on { background: var(--purple); color: #fff; }
+  @media (prefers-color-scheme: dark) { .seg button.on { color: #1c1a22; } }
+  .tools { display: flex; gap: 8px; align-items: center; padding-top: 8px; }
+  .search { flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--card); color: var(--text);
+    border-radius: 10px; padding: 7px 10px; font-size: 16px; /* 16px stops iOS zoom-on-focus */ }
+  .toggle { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+
+  /* ---------- Menu content ---------- */
+  main { padding: 10px 12px 40px; }
+  .hall-title { font-size: 20px; margin: 18px 2px 4px; }
+  .station { margin: 14px 0 6px; }
+  .station h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .6px; color: var(--purple);
+    margin: 0 2px 6px; font-weight: 600; }
+  .station h3 span { color: var(--muted); font-weight: 400; text-transform: none; letter-spacing: 0; margin-left: 6px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 11px 13px; margin-bottom: 8px; }
+  .name-zh { font-size: 17px; font-weight: 600; }
+  .name-en { font-size: 13px; color: var(--muted); }
+  .meta { float: right; font-size: 12px; color: var(--muted); text-align: right; margin-left: 8px; }
+  .desc { font-size: 14px; margin-top: 6px; }
+  .desc .en { display: block; color: var(--muted); font-size: 12.5px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 7px; }
+  .tag { font-size: 11.5px; padding: 2px 7px; border-radius: 6px; background: var(--alg-bg); color: var(--alg-fg); }
+  .tag.diet { background: var(--veg-bg); color: var(--veg-fg); }
+  details { margin-top: 7px; }
+  summary { font-size: 13px; color: var(--purple); cursor: pointer; list-style: none; }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: "▸ "; }
+  details[open] summary::before { content: "▾ "; }
+  .ings { display: flex; flex-wrap: wrap; gap: 4px 6px; margin-top: 6px; }
+  .ing { font-size: 13px; background: var(--purple-soft); border-radius: 6px; padding: 2px 7px; }
+  .ing i { font-style: normal; color: var(--muted); font-size: 11.5px; margin-left: 3px; }
+  mark { background: #ffe58a; color: inherit; border-radius: 3px; }
+  .empty { text-align: center; color: var(--muted); padding: 40px 10px; }
+  footer { text-align: center; font-size: 12px; color: var(--muted); padding: 10px 12px 30px; }
+  footer a { color: var(--purple); }
+  @media (min-width: 720px) {
+    .items { display: grid; grid-template-columns: 1fr 1fr; gap: 0 8px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="titlebar">
+      <h1>NU 食堂菜单 <span style="font-weight:400;font-size:13px">中英对照</span></h1>
+      <span class="updated" id="updated"></span>
+    </div>
+    <div class="row" id="dates"></div>
+    <div class="row">
+      <div class="seg" id="meals">
+        <button data-meal="lunch">午餐 Lunch</button><button data-meal="dinner">晚餐 Dinner</button>
+      </div>
+    </div>
+    <div class="row" id="halls"></div>
+    <div class="tools">
+      <input class="search" id="q" type="search" placeholder="搜索菜名/配料，如 牛肉、tofu" autocomplete="off">
+      <label class="toggle"><input type="checkbox" id="expand"> 展开配料</label>
+    </div>
+  </div>
+</header>
+<main class="wrap" id="main"><div class="empty">加载中…</div></main>
+<footer class="wrap">
+  数据来源 <a id="src" href="https://dineoncampus.com/northwestern/whats-on-the-menu" target="_blank" rel="noopener">DineOnCampus</a>，中文为机器翻译，过敏信息请以官网为准。
+</footer>
+
+<script>
+/* Single-page viewer.
+ * Data: data/index.json lists available dates; data/YYYY-MM-DD.json holds one day.
+ * Every user-visible string is an {en, zh} pair produced by scraper/build.py.
+ * UI state (hall / meal / expand) is remembered in localStorage when available. */
+(() => {
+  const HALL_SHORT = {
+    "allison-dining-commons": "Allison", "sargent-dining-commons": "Sargent",
+    "foster-walker-plex-east": "Plex East", "foster-walker-plex-west": "Plex West",
+    "elder-dining-commons": "Elder",
+  };
+  // Filter names that describe a diet rather than an allergen get the green style.
+  const DIET = /vegan|vegetarian|halal|kosher|climate|plant|avoiding gluten|gluten free/i;
+
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem("nu-menu:" + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { localStorage.setItem("nu-menu:" + k, JSON.stringify(v)); } catch {} },
+  };
+
+  const now = new Date();
+  const todayStr = chicagoDate(now);
+  const state = {
+    dates: [], date: null, day: null,
+    hall: store.get("hall", "all"),
+    // Before 3 pm Chicago time default to lunch, afterwards dinner.
+    meal: chicagoHour(now) < 15 ? "lunch" : "dinner",
+    q: "", expand: store.get("expand", false),
+  };
+  const cache = {};
+  const $ = (id) => document.getElementById(id);
+
+  function chicagoDate(d) {
+    return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+  }
+  function chicagoHour(d) {
+    return +new Intl.DateTimeFormat("en-US", { timeZone: "America/Chicago", hour: "numeric", hour12: false }).format(d) % 24;
+  }
+  function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+  // Escape, then highlight the current search term (case-insensitive).
+  function hl(s) {
+    const t = esc(s);
+    if (!state.q) return t;
+    const q = esc(state.q).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return t.replace(new RegExp(q, "gi"), m => `<mark>${m}</mark>`);
+  }
+  function dateLabel(ds) {
+    const d = new Date(ds + "T12:00:00");
+    const wk = "日一二三四五六"[d.getDay()];
+    const md = `${d.getMonth() + 1}/${d.getDate()}`;
+    const diff = Math.round((d - new Date(todayStr + "T12:00:00")) / 86400000);
+    const rel = diff === 0 ? "今天" : diff === 1 ? "明天" : diff === -1 ? "昨天" : "周" + wk;
+    return `${rel}<small>${md}</small>`;
+  }
+
+  async function loadJSON(url) {
+    const r = await fetch(url, { cache: "no-cache" });
+    if (!r.ok) throw new Error(r.status);
+    return r.json();
+  }
+
+  async function init() {
+    try {
+      const idx = await loadJSON("data/index.json");
+      state.dates = idx.dates || [];
+      $("updated").textContent = idx.updated ? "更新于 " + idx.updated.slice(5, 16).replace("T", " ") : "";
+    } catch { $("main").innerHTML = `<div class="empty">数据加载失败，请稍后刷新。</div>`; return; }
+    if (!state.dates.length) { $("main").innerHTML = `<div class="empty">暂无菜单数据。</div>`; return; }
+    // Prefer today; otherwise the nearest future date; otherwise the latest available.
+    state.date = state.dates.includes(todayStr) ? todayStr
+      : (state.dates.find(d => d > todayStr) || state.dates[state.dates.length - 1]);
+    $("expand").checked = state.expand;
+    bind();
+    await selectDate(state.date);
+  }
+
+  function bind() {
+    $("meals").addEventListener("click", e => {
+      const b = e.target.closest("button"); if (!b) return;
+      state.meal = b.dataset.meal; render();
+    });
+    $("q").addEventListener("input", e => { state.q = e.target.value.trim(); render(); });
+    $("expand").addEventListener("change", e => { state.expand = e.target.checked; store.set("expand", state.expand); render(); });
+  }
+
+  async function selectDate(d) {
+    state.date = d;
+    renderDates();
+    try { state.day = cache[d] || (cache[d] = await loadJSON(`data/${d}.json`)); }
+    catch { state.day = null; }
+    render();
+  }
+
+  function renderDates() {
+    // Show today-onwards first, plus up to 3 previous days for reference.
+    const list = state.dates.filter(d => d >= todayStr);
+    const past = state.dates.filter(d => d < todayStr).slice(-3);
+    const all = [...past, ...list];
+    $("dates").innerHTML = all.map(d =>
+      `<button class="chip ${d === state.date ? "on" : ""}" data-d="${d}">${dateLabel(d)}</button>`).join("");
+    $("dates").onclick = e => { const b = e.target.closest("button"); if (b) selectDate(b.dataset.d); };
+    const on = $("dates").querySelector(".on"); if (on) on.scrollIntoView({ inline: "center", block: "nearest" });
+  }
+
+  function renderHalls() {
+    const halls = state.day ? state.day.halls : [];
+    if (state.hall !== "all" && !halls.some(h => h.slug === state.hall)) state.hall = "all";
+    const chips = [`<button class="chip ${state.hall === "all" ? "on" : ""}" data-h="all">全部</button>`]
+      .concat(halls.map(h => `<button class="chip ${state.hall === h.slug ? "on" : ""}" data-h="${h.slug}">${esc(HALL_SHORT[h.slug] || h.name)}</button>`));
+    $("halls").innerHTML = chips.join("");
+    $("halls").onclick = e => {
+      const b = e.target.closest("button"); if (!b) return;
+      state.hall = b.dataset.h; store.set("hall", state.hall); render();
+    };
+  }
+
+  function itemMatches(it) {
+    if (!state.q) return true;
+    const q = state.q.toLowerCase();
+    const hay = [it.name.en, it.name.zh, it.desc?.en, it.desc?.zh,
+      ...it.ingredients.flatMap(x => [x.en, x.zh])].join(" ").toLowerCase();
+    return hay.includes(q);
+  }
+
+  function renderItem(it) {
+    const zh = it.name.zh || it.name.en;
+    const tags = it.tags.map(t => `<span class="tag ${DIET.test(t.en) ? "diet" : ""}">${esc(t.zh || t.en)}</span>`).join("");
+    const ings = it.ingredients.length
+      ? `<details ${state.expand || state.q ? "open" : ""}><summary>配料 Ingredients（${it.ingredients.length}）</summary>
+           <div class="ings">${it.ingredients.map(x => `<span class="ing">${hl(x.zh || x.en)}${x.zh ? `<i>${hl(x.en)}</i>` : ""}</span>`).join("")}</div></details>`
+      : "";
+    const meta = [it.calories != null ? `${it.calories} kcal` : "", esc(it.portion)].filter(Boolean).join("<br>");
+    return `<div class="card">
+      <div class="meta">${meta}</div>
+      <div class="name-zh">${hl(zh)}</div>
+      <div class="name-en">${hl(it.name.en)}</div>
+      ${it.desc ? `<div class="desc">${hl(it.desc.zh || it.desc.en)}${it.desc.zh ? `<span class="en">${hl(it.desc.en)}</span>` : ""}</div>` : ""}
+      ${tags ? `<div class="tags">${tags}</div>` : ""}
+      ${ings}
+    </div>`;
+  }
+
+  function renderHall(h, showTitle) {
+    const meal = h.meals[state.meal];
+    let body = "";
+    if (!meal) {
+      if (state.q) return "";
+      body = `<div class="card name-en">${h.error ? "该食堂数据获取失败" : "该时段无菜单（可能未开放或尚未公布）"}</div>`;
+    } else {
+      body = meal.stations.map(st => {
+        const items = st.items.filter(itemMatches);
+        if (!items.length) return "";
+        const zh = st.name.zh && st.name.zh !== st.name.en ? `<span>${esc(st.name.zh)}</span>` : "";
+        return `<section class="station"><h3>${esc(st.name.en)}${zh}</h3><div class="items">${items.map(renderItem).join("")}</div></section>`;
+      }).join("");
+      if (!body) return state.q ? "" : `<div class="card name-en">该时段无菜单</div>`;
+    }
+    return (showTitle ? `<h2 class="hall-title">${esc(h.name)}</h2>` : "") + body;
+  }
+
+  function render() {
+    renderHalls();
+    document.querySelectorAll("#meals button").forEach(b => b.classList.toggle("on", b.dataset.meal === state.meal));
+    if (!state.day) { $("main").innerHTML = `<div class="empty">这一天的菜单还没有数据。</div>`; return; }
+    const halls = state.hall === "all" ? state.day.halls : state.day.halls.filter(h => h.slug === state.hall);
+    const html = halls.map(h => renderHall(h, state.hall === "all")).join("");
+    $("main").innerHTML = html || `<div class="empty">没有找到「${esc(state.q)}」相关的菜。</div>`;
+    const slug = state.hall === "all" ? "allison-dining-commons" : state.hall;
+    $("src").href = `https://dineoncampus.com/northwestern/whats-on-the-menu/${slug}/${state.date}/${state.meal}`;
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
