@@ -102,6 +102,25 @@ def load_raw(d: str) -> dict:
     return fetch_day(d)
 
 
+def expand_bundles() -> None:
+    """Unpack raw/*.b64 bundles into raw/YYYY-MM-DD.json.
+
+    A bundle is base64(gzip(JSON {"YYYY-MM-DD": day, ...})). The browser collector
+    uploads this compact form through the GitHub web editor (~50 KB instead of
+    ~500 KB of JSON per two days).
+    """
+    import base64
+    import gzip
+
+    if not RAW_DIR.exists():
+        return
+    for b in sorted(RAW_DIR.glob("*.b64")):
+        days = json.loads(gzip.decompress(base64.b64decode(b.read_text().strip())))
+        for d, day in days.items():
+            (RAW_DIR / f"{d}.json").write_text(json.dumps(day, ensure_ascii=False), encoding="utf-8")
+        print(f"[build] expanded {b.name}: {', '.join(days)}")
+
+
 def scrape_and_store(dates: list[str]) -> None:
     tr = Translator()
     MENU_DIR.mkdir(parents=True, exist_ok=True)
@@ -180,6 +199,7 @@ def main(argv: list[str]) -> None:
     offline = "--offline" in argv
     dates = [a for a in argv if not a.startswith("--")]
     if not offline:
+        expand_bundles()
         if not dates:
             # Re-process recent raw dumps (git checkouts reset mtimes, so go by date).
             # Older days are already translated in data/menus and are left alone.
